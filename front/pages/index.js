@@ -1,21 +1,49 @@
 import Head from 'next/head'
-import Image from 'next/image'
 import config from '../config.json'
 import React, { useState } from 'react'
+import Modal from '../components/modal/modal'
+import CardProduct from '../components/card-product/card-product'
 
 export async function getStaticProps() {
   const resProducts = await fetch(`${config.API_URL}/products`);
   const products = await resProducts.json();
   const resCategories = await fetch(`${config.API_URL}/categories`);
   const categories = await resCategories.json();
-  const resRecommended = await fetch(`${config.API_URL}/recommended`);
-  const recommended = await resRecommended.json();
 
-  return { props: { products, categories, recommended } };
+  return { props: { products, categories } };
 }
 
-export default function Home({ products, categories, recommended }) {
-  const [categoryFilter, setCategoryFilter] = useState('0');
+const Home = ({ products, categories }) => {
+  const [filteredProducts, setFilteredProducts] = useState(products);
+  const [cartProducts, setCartProducts] = useState([]);
+  const [toggleModal, setToggleModal] = useState(false);
+  const [recommendedProducts, setRecommendedProducts] = useState([]);
+
+  const handleCategoryChange = e => {
+    if (e.target.value === 'all') {
+      setFilteredProducts(products);
+    } else {
+      setFilteredProducts(
+        products.filter(product => product.categories && product.categories.includes(e.target.value))
+      )
+    }
+  }
+
+  const handleAddRemoveProduct = async (product_id) => {
+    const index = cartProducts.indexOf(product_id);
+    //Adding product
+    if (index === -1) {
+      setCartProducts([...cartProducts, product_id]);
+      const resRecommendedProds = await fetch(`${config.API_URL}/recommendations?product_id=${product_id}`);
+      const recProds = await resRecommendedProds.json();
+      setRecommendedProducts(recProds[0].recommendations);
+      setToggleModal(true);
+    } else { //Deleting product
+      const tmpProducts = [...cartProducts];
+      tmpProducts.splice(index, 1);
+      setCartProducts(tmpProducts);
+    }
+  }
 
   return (
     <div className="container">
@@ -30,23 +58,31 @@ export default function Home({ products, categories, recommended }) {
         </h1>
 
         <label className="label-categories">Filtrar por categoría</label>
-        <select className="categories" value={categoryFilter} onChange={e => setCategoryFilter(e.target.value)}>
-          <option disabled value="0">Todas</option>
+        <select className="categories" onChange={e => handleCategoryChange(e)}>
+          <option value="all">Todas</option>
           {categories && categories.map(category => (
             <option key={category} value={category}>{category.toUpperCase()}</option>
           ))}
         </select>
 
         <div className="grid">
-          {products && products.map(product => (
-            <div href="#" key={product.product_id} className="card">
-              <Image src={product.image_url} height={100} width={100} />
-              <h3>{product.name}</h3>
-              <p>${product.total_price}</p>
-            </div>
+          {filteredProducts && filteredProducts.map(product => (
+            <CardProduct typeButton={cartProducts.includes(product.product_id) ? "Delete" : "Add"} key={product.product_id} product={product} addRemove={() => handleAddRemoveProduct(product.product_id)}></CardProduct>
           ))}
         </div>
       </main>
+
+      <Modal show={toggleModal} onClose={() => setToggleModal(false)}>
+        {products.filter(p => recommendedProducts.includes(p.product_id))
+          .map(product => (
+            <CardProduct
+              typeButton={cartProducts.includes(product.product_id) ? "Delete" : "Add"}
+              key={product.product_id}
+              product={product}
+              addRemove={() => handleAddRemoveProduct(product.product_id)}>
+            </CardProduct>
+          ))}
+      </Modal>
 
       <footer>
         Siempre en casa
@@ -141,37 +177,6 @@ export default function Home({ products, categories, recommended }) {
           margin-top: 3rem;
         }
 
-        .card {
-          margin: 1rem;
-          flex-basis: 20%;
-          padding: 1.5rem;
-          text-align: left;
-          color: inherit;
-          text-decoration: none;
-          border: 1px solid #eaeaea;
-          border-radius: 10px;
-          transition: color 0.15s ease, border-color 0.15s ease;
-          min-height: 350px;
-        }
-
-        .card:hover,
-        .card:focus,
-        .card:active {
-          color: #0070f3;
-          border-color: #0070f3;
-        }
-
-        .card h3 {
-          margin: 0 0 1rem 0;
-          font-size: 1.1rem;
-        }
-
-        .card p {
-          margin: 0;
-          font-size: 1rem;
-          line-height: 1.5;
-        }
-
         .logo {
           height: 1em;
         }
@@ -194,3 +199,5 @@ export default function Home({ products, categories, recommended }) {
     </div>
   )
 }
+
+export default Home;
