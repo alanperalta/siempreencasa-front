@@ -8,8 +8,10 @@ const cardProduct = ({ product, addRemove, typeButton }) => {
     <div className={styles.card}>
       <Image src={product.image_url} height={100} width={100} />
       <h3>{product.name}</h3>
-      <p>${product.total_price}</p>
-      <Button type={typeButton} click={addRemove} />
+      <div className={styles.priceButtons}>
+        <p>${product.total_price}</p>
+        <Button type={typeButton} click={addRemove} />
+      </div>
     </div>
   )
 }

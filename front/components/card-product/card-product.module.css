@@ -2,7 +2,7 @@
   margin: 1rem;
   flex-basis: 20%;
   padding: 1.5rem;
-  text-align: left;
+  text-align: center;
   color: inherit;
   text-decoration: none;
   border: 1px solid #eaeaea;
@@ -14,13 +14,14 @@
 .card:hover,
 .card:focus,
 .card:active {
-  color: #0070f3;
-  border-color: #0070f3;
+  color: #1b3464;
+  border-color: #1b3464;
 }
 
 .card h3 {
   margin: 0 0 1rem 0;
   font-size: 1.1rem;
+  min-height: 120px;
 }
 
 .card p {

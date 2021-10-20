@@ -3,6 +3,7 @@ import config from '../config.json'
 import React, { useState } from 'react'
 import Modal from '../components/modal/modal'
 import CardProduct from '../components/card-product/card-product'
+import Layout from '../components/layout/layout'
 
 export async function getStaticProps() {
   const resProducts = await fetch(`${config.API_URL}/products`);
@@ -16,7 +17,7 @@ export async function getStaticProps() {
 const Home = ({ products, categories }) => {
   const [filteredProducts, setFilteredProducts] = useState(products);
   const [cartProducts, setCartProducts] = useState([]);
-  const [toggleModal, setToggleModal] = useState(false);
+  const [isModalOpen, setIsModalOpen] = useState(false);
   const [recommendedProducts, setRecommendedProducts] = useState([]);
 
   const handleCategoryChange = e => {
@@ -34,10 +35,14 @@ const Home = ({ products, categories }) => {
     //Adding product
     if (index === -1) {
       setCartProducts([...cartProducts, product_id]);
-      const resRecommendedProds = await fetch(`${config.API_URL}/recommendations?product_id=${product_id}`);
-      const recProds = await resRecommendedProds.json();
-      setRecommendedProducts(recProds[0].recommendations);
-      setToggleModal(true);
+
+      //Don't recommend products if modal is open
+      if (!isModalOpen) {
+        const resRecommendedProds = await fetch(`${config.API_URL}/recommendations?product_id=${product_id}`);
+        const recProds = await resRecommendedProds.json();
+        setRecommendedProducts(recProds[0].recommendations);
+        setIsModalOpen(true);
+      }
     } else { //Deleting product
       const tmpProducts = [...cartProducts];
       tmpProducts.splice(index, 1);
@@ -46,49 +51,46 @@ const Home = ({ products, categories }) => {
   }
 
   return (
-    <div className="container">
-      <Head>
-        <title>Siempre en casa</title>
-        <link rel="icon" href="/favicon.ico" />
-      </Head>
+    <Layout>
+      <div className="container">
+        <Head>
+          <title>Siempre en casa - Bebidas</title>
+          <link rel="icon" href="/favicon.ico" />
+        </Head>
 
-      <main>
-        <h1 className="title">
-          Siempre en casa
-        </h1>
+        <main>
+          <h1 className="title">
+            Bebidas
+          </h1>
 
-        <label className="label-categories">Filtrar por categoría</label>
-        <select className="categories" onChange={e => handleCategoryChange(e)}>
-          <option value="all">Todas</option>
-          {categories && categories.map(category => (
-            <option key={category} value={category}>{category.toUpperCase()}</option>
-          ))}
-        </select>
+          <label className="label-categories">Filtrar por categoría</label>
+          <select className="categories" onChange={e => handleCategoryChange(e)}>
+            <option value="all">Todas</option>
+            {categories && categories.map(category => (
+              <option key={category} value={category}>{category.toUpperCase()}</option>
+            ))}
+          </select>
 
-        <div className="grid">
-          {filteredProducts && filteredProducts.map(product => (
-            <CardProduct typeButton={cartProducts.includes(product.product_id) ? "Delete" : "Add"} key={product.product_id} product={product} addRemove={() => handleAddRemoveProduct(product.product_id)}></CardProduct>
-          ))}
-        </div>
-      </main>
+          <div className="grid">
+            {filteredProducts && filteredProducts.map(product => (
+              <CardProduct typeButton={cartProducts.includes(product.product_id) ? "Delete" : "Add"} key={product.product_id} product={product} addRemove={() => handleAddRemoveProduct(product.product_id)}></CardProduct>
+            ))}
+          </div>
+        </main>
 
-      <Modal show={toggleModal} onClose={() => setToggleModal(false)}>
-        {products.filter(p => recommendedProducts.includes(p.product_id))
-          .map(product => (
-            <CardProduct
-              typeButton={cartProducts.includes(product.product_id) ? "Delete" : "Add"}
-              key={product.product_id}
-              product={product}
-              addRemove={() => handleAddRemoveProduct(product.product_id)}>
-            </CardProduct>
-          ))}
-      </Modal>
+        <Modal show={isModalOpen} onClose={() => setIsModalOpen(false)}>
+          {products.filter(p => recommendedProducts.includes(p.product_id))
+            .map(product => (
+              <CardProduct
+                typeButton={cartProducts.includes(product.product_id) ? "Delete" : "Add"}
+                key={product.product_id}
+                product={product}
+                addRemove={() => handleAddRemoveProduct(product.product_id)}>
+              </CardProduct>
+            ))}
+        </Modal>
 
-      <footer>
-        Siempre en casa
-      </footer>
-
-      <style jsx>{`
+        <style jsx>{`
         .container {
           min-height: 100vh;
           padding: 0 0.5rem;
@@ -103,25 +105,6 @@ const Home = ({ products, categories }) => {
           flex: 1;
           display: flex;
           flex-direction: column;
-          justify-content: center;
-          align-items: center;
-        }
-
-        footer {
-          width: 100%;
-          height: 100px;
-          border-top: 1px solid #eaeaea;
-          display: flex;
-          justify-content: center;
-          align-items: center;
-        }
-
-        footer img {
-          margin-left: 0.5rem;
-        }
-
-        footer a {
-          display: flex;
           justify-content: center;
           align-items: center;
         }
@@ -196,7 +179,8 @@ const Home = ({ products, categories }) => {
           }
         }
       `}</style>
-    </div>
+      </div>
+    </Layout>
   )
 }
 
